@@ -1,5 +1,8 @@
 """Mixin para feature engineering: indicadores técnicos."""
 
+import ta
+import pandas as pd
+
 
 class FeaturesMixin:
     """Métodos de feature engineering: create_features()."""
@@ -44,16 +47,58 @@ class FeaturesMixin:
             Si mode no es "core" o "full".
         """
         self._require_data()
-        # TODO: Implementar
-        # mode="core":
-        #   1. Calcular cada indicador con la librería `ta`
-        #   2. Agregar returns y volatility manualmente
-        #   3. Dropear NaN rows iniciales
-        #
-        # mode="full":
-        #   1. ta.add_all_ta_features(...)
-        #   2. Dropear NaN rows iniciales
-        #   3. Print cantidad de features agregados
-        #
-        # Guardar en self.features
-        pass
+
+        df = self.data.copy()
+        original_rows = len(df)
+
+        if mode == "core":
+            # Medias móviles
+            df["SMA_20"] = ta.trend.sma_indicator(df["Close"], window=20)
+            df["SMA_50"] = ta.trend.sma_indicator(df["Close"], window=50)
+
+            # RSI
+            df["RSI_14"] = ta.momentum.rsi(df["Close"], window=14)
+
+            # MACD
+            df["MACD"] = ta.trend.macd(df["Close"])
+            df["MACD_signal"] = ta.trend.macd_signal(df["Close"])
+
+            # Bollinger Bands
+            df["BB_upper"] = ta.volatility.bollinger_hband(df["Close"])
+            df["BB_lower"] = ta.volatility.bollinger_lband(df["Close"])
+
+            # ATR
+            df["ATR_14"] = ta.volatility.average_true_range(
+                df["High"], df["Low"], df["Close"], window=14
+            )
+
+            # Indicadores manuales
+            df["volume_change"] = df["Volume"].pct_change()
+            df["returns"] = df["Close"].pct_change()
+            df["volatility_20"] = df["returns"].rolling(window=20).std()
+
+            df.dropna(inplace=True)
+            n_features = 11
+
+        elif mode == "full":
+            df = ta.add_all_ta_features(
+                df, open="Open", high="High", low="Low", close="Close", volume="Volume"
+            )
+            # add_all_ta_features no genera estos
+            df["returns"] = df["Close"].pct_change()
+            df["volatility_20"] = df["returns"].rolling(window=20).std()
+
+            # ffill para indicadores con NaN por diseño (e.g. PSAR up/down)
+            df.ffill(inplace=True)
+            df.dropna(inplace=True)
+            n_features = len(df.columns) - 5  # descontar OHLCV originales
+
+        else:
+            raise ValueError(f"mode debe ser 'core' o 'full', recibido: '{mode}'")
+
+        self.features = df
+
+        print(f"🔧 Features creados ({mode}): {n_features} indicadores")
+        print(f"   Registros: {len(df)} (de {original_rows} originales)")
+
+        return self
