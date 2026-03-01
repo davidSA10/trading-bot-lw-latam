@@ -60,7 +60,7 @@ class CryptoBot(
         Exchange a usar via CCXT (default: "binanceus").
         Verificados desde Google Colab: "binanceus", "kraken",
         "cryptocom", "okx", "coinbase", "bitget", "kucoin",
-        "gemini", "poloniex".
+        "gemini", "bitso", "poloniex".
         ⚠️ No funcionan desde Colab: "binance", "bybit" (geo-block US).
     max_position_pct : float
         Máximo porcentaje del balance por trade (default: 0.10 = 10%).
