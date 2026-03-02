@@ -379,7 +379,8 @@ class RegimeMixin:
         ----------
         strategy : str
             Nombre de la estrategia. Opciones:
-            "trend_following", "mean_reversion", "momentum".
+            "trend_following", "mean_reversion", "momentum",
+            "breakout", "stat_arb", "volatility".
 
         Returns
         -------
