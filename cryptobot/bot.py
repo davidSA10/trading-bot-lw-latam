@@ -96,7 +96,7 @@ class CryptoBot(
     --------
     >>> from cryptobot_lewagon import CryptoBot
     >>> bot = CryptoBot(symbol="BTC")
-    >>> bot.fetch_data(last_days=90)
+    >>> bot.fetch_data(last_n=200)
     >>> bot.create_features()
     >>> bot.detect_regime()
     >>> bot.recommend_strategies()

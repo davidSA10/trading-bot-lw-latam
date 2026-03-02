@@ -11,7 +11,7 @@ class DataMixin:
 
     def fetch_data(
         self,
-        last_days: int = 365,
+        last_n: int = 200,
         start: Optional[str] = None,
         end: Optional[str] = None,
     ) -> "DataMixin":
@@ -19,16 +19,21 @@ class DataMixin:
         Obtiene datos OHLCV del exchange via CCXT.
 
         Soporta dos modos:
-        - Por cantidad de días: bot.fetch_data(last_days=90)
+        - Por número de velas: bot.fetch_data(last_n=200)
         - Por rango de fechas: bot.fetch_data(start="2024-01-01", end="2024-12-31")
+
+        La ventana temporal se calcula automáticamente según el timeframe:
+        - last_n=200 con timeframe="1h" → últimas 200 horas (~8 días)
+        - last_n=200 con timeframe="4h" → últimas 800 horas (~33 días)
+        - last_n=200 con timeframe="1d" → últimos 200 días (~6.5 meses)
 
         Las columnas del DataFrame siguen el formato requerido
         por backtesting.py: Open, High, Low, Close, Volume.
 
         Parameters
         ----------
-        last_days : int, default 365
-            Número de días hacia atrás desde hoy. Se ignora si start/end están definidos.
+        last_n : int, default 200
+            Número de velas hacia atrás desde hoy. Se ignora si start/end están definidos.
         start : str, optional
             Fecha de inicio en formato "YYYY-MM-DD".
         end : str, optional
@@ -42,7 +47,7 @@ class DataMixin:
         Examples
         --------
         >>> bot.fetch_data()
-        >>> bot.fetch_data(last_days=180)
+        >>> bot.fetch_data(last_n=500)
         >>> bot.fetch_data(start="2024-01-01", end="2024-06-30")
         """
         # ── Calcular timestamps ────────────────────────
@@ -58,8 +63,10 @@ class DataMixin:
                 end_timestamp = int(datetime.now().timestamp() * 1000)
         else:
             end_timestamp = int(datetime.now().timestamp() * 1000)
+            tf_hours = {"1h": 1, "4h": 4, "1d": 24}
+            hours = last_n * tf_hours[self.timeframe]
             since_timestamp = int(
-                (datetime.now() - timedelta(days=last_days)).timestamp() * 1000
+                (datetime.now() - timedelta(hours=hours)).timestamp() * 1000
             )
 
         # ── Fetch paginado ────────────────────────────

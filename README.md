@@ -17,7 +17,7 @@ from cryptobot_lewagon import CryptoBot
 bot = CryptoBot(symbol="BTC", timeframe="1d")
 
 # 2. Cargar datos
-bot.fetch_data(last_days=90)
+bot.fetch_data(last_n=200)
 bot.summary()
 
 # 3. Crear features

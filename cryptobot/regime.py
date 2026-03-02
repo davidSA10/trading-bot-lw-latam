@@ -133,7 +133,7 @@ class RegimeMixin:
             import warnings
             warnings.warn(
                 f"Solo {len(regime_features)} filas válidas para {n_regimes} regímenes. "
-                f"Considere usar más datos (last_days más alto)."
+                f"Considere usar más datos (last_n más alto)."
             )
 
         # ── 5. Curación automatizada ─────────────────────
