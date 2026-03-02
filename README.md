@@ -50,6 +50,7 @@ bot.plot_signals()
 bot.backtest()
 bot.backtest_plot()
 bot.plot_performance()
+```
 
 > **Nota**: `breakout` requiere features con `mode="full"`. `stat_arb` requiere `fetch_data(pair_symbol="ETH")` para cargar datos del par secundario.
 
@@ -79,7 +80,7 @@ fetch_data() → create_features() → detect_regime() → recommend_strategies(
 ```
 
 
-⚠️ **Este bot es educativo. No operes con dinero real sin entender completamente los riesgos.**
+### ⚠️ **Este bot es educativo. No operes con dinero real sin entender completamente los riesgos.**
 
 ## Crear tu propio bot (Fork)
 
