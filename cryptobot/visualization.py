@@ -205,7 +205,7 @@ class VisualizationMixin:
                 y=bh,
                 mode="lines",
                 name="Buy & Hold",
-                line=dict(color=COLOR_PALETTE["gray"], width=1.5, dash="dash"),
+                line=dict(color="white", width=1.5, dash="dash"),
             ),
             row=1,
             col=1,
@@ -214,7 +214,7 @@ class VisualizationMixin:
         fig.add_trace(
             go.Scatter(
                 x=eq.index,
-                y=eq["DrawdownPct"] * 100,
+                y=eq["DrawdownPct"] * -100,
                 mode="lines",
                 fill="tozeroy",
                 name="Drawdown",
