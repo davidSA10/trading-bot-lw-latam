@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
@@ -34,6 +34,7 @@ class ModelsMixin:
         - SVM (RBF kernel)
         - Random Forest
         - XGBoost
+        - AdaBoost
 
         Usa TimeSeriesSplit para validación temporal (sin data leakage).
 
@@ -133,6 +134,10 @@ class ModelsMixin:
                     random_state=42,
                 )),
             ]),
+            "adaboost": Pipeline([
+                ("scaler", StandardScaler()),
+                ("model", AdaBoostClassifier(n_estimators=100, random_state=42)),
+            ]),
         }
 
         # ── 5. Entrenar y evaluar cada modelo (out-of-fold) ──
@@ -209,7 +214,7 @@ class ModelsMixin:
         model_name : str, optional
             Modelo a optimizar. Si None, optimiza el mejor modelo
             de train_models(). Opciones: "logistic_regression",
-            "svm", "random_forest", "xgboost".
+            "svm", "random_forest", "xgboost", "adaboost".
 
         Returns
         -------
@@ -244,6 +249,7 @@ class ModelsMixin:
                 verbosity=0,
                 random_state=42,
             ),
+            "adaboost": AdaBoostClassifier(random_state=42),
         }
 
         param_grids = {
@@ -266,6 +272,11 @@ class ModelsMixin:
                 "model__n_estimators": [50, 100, 200],
                 "model__max_depth": [3, 5, 7],
                 "model__learning_rate": [0.01, 0.1, 0.3],
+            },
+            "adaboost": {
+                "model__n_estimators": [50, 100, 200],
+                "model__learning_rate": [0.01, 0.1, 0.5, 1.0],
+                "model__algorithm": ["SAMME", "SAMME.R"],
             },
         }
 
