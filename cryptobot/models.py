@@ -204,6 +204,9 @@ class ModelsMixin:
         feature_cols = [c for c in df.columns if c not in exclude_cols]
         self._feature_cols = feature_cols
 
+        # Limpiar NaN de warmup en features (rolling windows de nuevas estrategias)
+        df.dropna(subset=feature_cols, inplace=True)
+
         X = df[feature_cols].values
         y = df["target"].values
 
