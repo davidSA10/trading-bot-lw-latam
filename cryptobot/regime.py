@@ -16,11 +16,10 @@ class RegimeMixin:
         """
         Detecta el régimen de mercado actual usando Gaussian Mixture Model.
 
-        Clasifica el mercado en regímenes basados en:
-        - Returns (retornos porcentuales)
-        - Volatilidad (rolling std de returns)
-        - Trend strength (pendiente de SMA)
-        - Volume change (cambio porcentual de volumen)
+        Clasifica el mercado en regímenes usando 13 features multi-escala:
+        - Retornos y tendencia en 3 timeframes (short/medium/long)
+        - Volatilidad en 3 timeframes + Garman-Klass + ratio de expansión
+        - Volume ratio, RSI, distancia a SMA, drawdown
 
         El GMM provee probabilidades suaves para cada régimen,
         no una clasificación binaria. Ejemplo: "72% Bull, 20% Sideways, 8% Bear".
@@ -43,26 +42,98 @@ class RegimeMixin:
         """
         self._require_features()
 
-        # 1. Crear features para clustering
-        regime_features = pd.DataFrame({
-            "returns": self.features["returns"],
-            "volatility": self.features["volatility_20"],
-            "trend": self.features["Close"].pct_change(20),
-            "volume_change": self.features["Volume"].pct_change(),
-        }).dropna()
+        # ── Constantes de ventana ────────────────────────
+        SHORT, MEDIUM, LONG = 7, 21, 50
+        RSI_WINDOW = 14
+        STRUCTURAL_DESIRED = 200
 
-        # 2. Escalar con StandardScaler
+        df = self.data.copy()
+        n = len(df)
+
+        # Ventana estructural adaptativa
+        long_structural = min(STRUCTURAL_DESIRED, n - LONG)
+        long_structural = max(long_structural, LONG)  # piso en 50
+
+        # ── 1. Feature engineering: 13 indicadores ───────
+        returns = df["Close"].pct_change()
+
+        regime_features = pd.DataFrame(index=df.index)
+        # Retornos
+        regime_features["returns"] = returns
+        # Tendencia multi-escala
+        regime_features["trend_short"] = returns.rolling(SHORT).mean()
+        regime_features["trend_medium"] = returns.rolling(MEDIUM).mean()
+        regime_features["trend_long"] = returns.rolling(LONG).mean()
+        # Volatilidad multi-escala
+        regime_features["vol_short"] = returns.rolling(SHORT).std()
+        regime_features["vol_medium"] = returns.rolling(MEDIUM).std()
+        regime_features["vol_long"] = returns.rolling(LONG).std()
+
+        # Garman-Klass volatility
+        log_hl = np.log(df["High"] / df["Low"]) ** 2
+        log_co = np.log(df["Close"] / df["Open"]) ** 2
+        gk_vol = np.sqrt(
+            (0.5 * log_hl - (2 * np.log(2) - 1) * log_co).rolling(MEDIUM).mean()
+        )
+        regime_features["gk_volatility"] = gk_vol
+
+        # Volatility ratio (expansión/contracción)
+        regime_features["vol_ratio"] = (
+            regime_features["vol_short"] / regime_features["vol_long"]
+        )
+
+        # Volume ratio
+        regime_features["volume_ratio"] = (
+            df["Volume"] / df["Volume"].rolling(MEDIUM).mean()
+        )
+
+        # RSI manual
+        delta = df["Close"].diff()
+        gain = delta.where(delta > 0, 0).rolling(RSI_WINDOW).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(RSI_WINDOW).mean()
+        rs = gain / loss
+        regime_features["rsi"] = 100 - (100 / (1 + rs))
+
+        # Distancia desde SMA estructural
+        sma_structural = df["Close"].rolling(long_structural).mean()
+        regime_features["dist_sma"] = (df["Close"] - sma_structural) / sma_structural
+
+        # Drawdown desde máximo rolling
+        rolling_high = df["Close"].rolling(long_structural).max()
+        regime_features["drawdown"] = (df["Close"] - rolling_high) / rolling_high
+
+        # ── 2. Limpieza ──────────────────────────────────
+        regime_features = regime_features.replace([np.inf, -np.inf], np.nan)
+
+        # Si volume_ratio es todo NaN (pares sin volumen), dropear
+        if regime_features["volume_ratio"].isna().all():
+            regime_features = regime_features.drop(columns=["volume_ratio"])
+
+        regime_features = regime_features.dropna()
+
+        if len(regime_features) < n_regimes * 5:
+            import warnings
+            warnings.warn(
+                f"Solo {len(regime_features)} filas válidas para {n_regimes} regímenes. "
+                f"Considere usar más datos (last_days más alto)."
+            )
+
+        # ── 3. Escalar y fit GMM ─────────────────────────
         scaler = StandardScaler()
         X = scaler.fit_transform(regime_features)
 
-        # 3. Fit GaussianMixture
-        gmm = GaussianMixture(n_components=n_regimes, random_state=42)
+        gmm = GaussianMixture(
+            n_components=n_regimes,
+            covariance_type="full",
+            n_init=5,
+            random_state=42,
+        )
         gmm.fit(X)
 
-        # 4. Predecir regímenes para todos los períodos
+        # ── 4. Predecir regímenes ────────────────────────
         labels = gmm.predict(X)
 
-        # 5. Mapear clusters a labels semánticos basado en mean returns
+        # ── 5. Mapear clusters → labels semánticos ───────
         regime_features = regime_features.copy()
         regime_features["cluster"] = labels
         mean_returns = regime_features.groupby("cluster")["returns"].mean()
@@ -75,15 +146,16 @@ class RegimeMixin:
             sorted_clusters[2]: 2,   # Bull
         }
 
-        # Asignar régimen mapeado a self.features
+        # Asignar régimen mapeado a self.features (alineación por índice)
         mapped_labels = pd.Series(
             [cluster_to_regime[c] for c in labels],
             index=regime_features.index,
         )
         self.features["regime"] = np.nan
-        self.features.loc[mapped_labels.index, "regime"] = mapped_labels.values
+        common_idx = self.features.index.intersection(mapped_labels.index)
+        self.features.loc[common_idx, "regime"] = mapped_labels.loc[common_idx].values
 
-        # 6. Obtener probabilidades del último período
+        # ── 6. Probabilidades del último período ─────────
         last_point = X[-1].reshape(1, -1)
         proba = gmm.predict_proba(last_point)[0]
 
@@ -93,17 +165,18 @@ class RegimeMixin:
             label = REGIME_LABELS[regime_id]
             regime_probs[label] = round(proba[cluster_id], 4)
 
-        # 7. Guardar estado
+        # ── 7. Guardar estado ────────────────────────────
         last_regime_id = cluster_to_regime[labels[-1]]
-        # Extraer nombre sin emoji para self.regime
         regime_label = REGIME_LABELS[last_regime_id]
         self.regime = regime_label.split()[0]  # "Bull", "Bear", o "Sideways"
         self.regime_probabilities = regime_probs
         self.regime_model = gmm
 
-        # 8. Print régimen actual
+        # ── 8. Print informativo ─────────────────────────
         confidence = proba[labels[-1]]
         print(f"📊 Régimen detectado: {regime_label} (confianza: {confidence:.1%})")
+        print(f"   Features: {X.shape[1]} indicadores | Ventana estructural: {long_structural}d")
+        print(f"   Períodos analizados: {len(regime_features)} de {n} disponibles")
 
         return self
 
