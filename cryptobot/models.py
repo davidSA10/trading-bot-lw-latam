@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.inspection import permutation_importance
 from sklearn.pipeline import Pipeline
@@ -118,7 +118,7 @@ class ModelsMixin:
             ]),
             "svm": Pipeline([
                 ("scaler", StandardScaler()),
-                ("model", SVC(probability=True)),
+                ("model", SVC()),
             ]),
             "random_forest": Pipeline([
                 ("scaler", StandardScaler()),
@@ -140,7 +140,6 @@ class ModelsMixin:
         for name, pipeline in models.items():
             all_y_true = []
             all_y_pred = []
-            all_y_proba = []
 
             for train_idx, test_idx in tscv.split(X):
                 X_train, X_test = X[train_idx], X[test_idx]
@@ -153,22 +152,18 @@ class ModelsMixin:
 
                 pipeline.fit(X_train, y_train)
                 y_pred = pipeline.predict(X_test)
-                y_proba = pipeline.predict_proba(X_test)[:, 1]
 
                 all_y_true.extend(y_test)
                 all_y_pred.extend(y_pred)
-                all_y_proba.extend(y_proba)
 
             all_y_true = np.array(all_y_true)
             all_y_pred = np.array(all_y_pred)
-            all_y_proba = np.array(all_y_proba)
 
             results[name] = {
                 "accuracy": accuracy_score(all_y_true, all_y_pred),
                 "precision": precision_score(all_y_true, all_y_pred, zero_division=0),
                 "recall": recall_score(all_y_true, all_y_pred, zero_division=0),
                 "f1": f1_score(all_y_true, all_y_pred, zero_division=0),
-                "auc": roc_auc_score(all_y_true, all_y_proba),
             }
 
         # ── 6. Seleccionar mejor modelo por F1 ────────────
@@ -191,14 +186,14 @@ class ModelsMixin:
         print("=" * 75)
         print("🤖 COMPARACIÓN DE MODELOS")
         print("=" * 75)
-        print(f"\n{'Modelo':<25} {'Accuracy':>10} {'Precision':>10} {'Recall':>10} {'F1':>10} {'AUC':>10}")
-        print("-" * 75)
+        print(f"\n{'Modelo':<25} {'Accuracy':>10} {'Precision':>10} {'Recall':>10} {'F1':>10}")
+        print("-" * 65)
 
         for name, metrics in results.items():
             star = " ⭐" if name == best_name else ""
             print(
                 f"{name:<25} {metrics['accuracy']:>9.4f} {metrics['precision']:>9.4f} "
-                f"{metrics['recall']:>9.4f} {metrics['f1']:>9.4f} {metrics['auc']:>9.4f}{star}"
+                f"{metrics['recall']:>9.4f} {metrics['f1']:>9.4f}{star}"
             )
 
         print(f"\n✅ Mejor modelo: {best_name} (F1: {results[best_name]['f1']:.4f})")
@@ -242,7 +237,7 @@ class ModelsMixin:
         # ── 2. Crear pipeline fresco para GridSearch ───────
         estimators = {
             "logistic_regression": LogisticRegression(max_iter=1000),
-            "svm": SVC(probability=True),
+            "svm": SVC(),
             "random_forest": RandomForestClassifier(random_state=42),
             "xgboost": XGBClassifier(
                 eval_metric="logloss",
@@ -296,7 +291,6 @@ class ModelsMixin:
         tscv = TimeSeriesSplit(n_splits=5)
         all_y_true = []
         all_y_pred = []
-        all_y_proba = []
 
         for train_idx, test_idx in tscv.split(self._X_train):
             X_train = self._X_train[train_idx]
@@ -306,22 +300,18 @@ class ModelsMixin:
 
             self.model.fit(X_train, y_train)
             y_pred = self.model.predict(X_test)
-            y_proba = self.model.predict_proba(X_test)[:, 1]
 
             all_y_true.extend(y_test)
             all_y_pred.extend(y_pred)
-            all_y_proba.extend(y_proba)
 
         all_y_true = np.array(all_y_true)
         all_y_pred = np.array(all_y_pred)
-        all_y_proba = np.array(all_y_proba)
 
         new_metrics = {
             "accuracy": accuracy_score(all_y_true, all_y_pred),
             "precision": precision_score(all_y_true, all_y_pred, zero_division=0),
             "recall": recall_score(all_y_true, all_y_pred, zero_division=0),
             "f1": f1_score(all_y_true, all_y_pred, zero_division=0),
-            "auc": roc_auc_score(all_y_true, all_y_proba),
         }
 
         # Refit en datos completos
@@ -336,7 +326,7 @@ class ModelsMixin:
         print(f"\n{'Métrica':<15} {'Antes':>10} {'Después':>10} {'Cambio':>10}")
         print("-" * 45)
 
-        for metric in ["accuracy", "precision", "recall", "f1", "auc"]:
+        for metric in ["accuracy", "precision", "recall", "f1"]:
             old_val = old_metrics[metric]
             new_val = new_metrics[metric]
             diff = new_val - old_val
