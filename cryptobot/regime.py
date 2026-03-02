@@ -367,6 +367,8 @@ class RegimeMixin:
             print(f"\n  {entry['signal']}  {entry['name']}")
             print(f"  {entry['rationale']}")
 
+        print("=" * 70) # Línea de cierre para claridad visual
+
         return self
 
     def select_strategy(self, strategy: str) -> "RegimeMixin":
