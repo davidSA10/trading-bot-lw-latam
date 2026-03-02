@@ -197,7 +197,8 @@ class RegimeMixin:
         regime_probs = {}
         for cluster_id, regime_id in cluster_to_regime.items():
             label = REGIME_LABELS[regime_id]
-            regime_probs[label] = round(proba[cluster_id], 4)
+            # regime_probs[label] = round(proba[cluster_id], 4)
+            regime_probs[label] = proba[cluster_id]
 
         # ── 10. Guardar estado ───────────────────────────
         last_regime_id = cluster_to_regime[labels[-1]]
