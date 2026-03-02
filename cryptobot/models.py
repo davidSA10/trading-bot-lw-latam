@@ -187,7 +187,7 @@ class ModelsMixin:
         print("🤖 COMPARACIÓN DE MODELOS")
         print("=" * 75)
         print(f"\n{'Modelo':<25} {'Accuracy':>10} {'Precision':>10} {'Recall':>10} {'F1':>10}")
-        print("-" * 65)
+        print("-" * 71)
 
         for name, metrics in results.items():
             star = " ⭐" if name == best_name else ""
@@ -319,19 +319,19 @@ class ModelsMixin:
         self.model_metrics = new_metrics
 
         # ── 5. Print resultados ────────────────────────────
-        print("=" * 65)
+        print("=" * 85)
         print(f"🔧 OPTIMIZACIÓN — {model_name}")
-        print("=" * 65)
+        print("=" * 85)
         print(f"\nMejores parámetros: {grid_search.best_params_}")
         print(f"\n{'Métrica':<15} {'Antes':>10} {'Después':>10} {'Cambio':>10}")
-        print("-" * 45)
+        print("-" * 48)
 
         for metric in ["accuracy", "precision", "recall", "f1"]:
             old_val = old_metrics[metric]
             new_val = new_metrics[metric]
             diff = new_val - old_val
             arrow = "↑" if diff > 0 else "↓" if diff < 0 else "="
-            print(f"{metric:<15} {old_val:>9.4f} {new_val:>9.4f} {arrow} {abs(diff):.4f}")
+            print(f"{metric:<15} {old_val:>10.4f} {new_val:>10.4f} {arrow} {abs(diff):>10.4f}")
 
         return self
 
