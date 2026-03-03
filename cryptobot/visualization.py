@@ -1,9 +1,18 @@
 """Mixin para visualización: gráficos de precio, señales y performance."""
 
+import math
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from .config import CHART_HEIGHT_MAIN, CHART_HEIGHT_SECONDARY, CHART_ROW_HEIGHTS
+from .config import (
+    CHART_HEIGHT_MAIN,
+    CHART_HEIGHT_SCAN,
+    CHART_HEIGHT_SECONDARY,
+    CHART_ROW_HEIGHTS,
+    SCANNER_LAST_N,
+    SCANNER_SYMBOLS,
+)
 from .constants import COLOR_PALETTE
 
 
@@ -257,6 +266,136 @@ class VisualizationMixin:
                     font=dict(color=COLOR_PALETTE["red"], size=14),
                 ),
             ],
+        )
+
+        fig.show()
+
+    def plot_scan(self, symbols: list = None, last_n: int = SCANNER_LAST_N) -> None:
+        """
+        Grid visual de mini-charts con régimen coloreado.
+
+        Muestra una línea de precio (Close) por cada criptomoneda,
+        con el fondo coloreado según el régimen detectado
+        (Bull=verde, Bear=rojo, Sideways=amarillo).
+
+        Parameters
+        ----------
+        symbols : list of str, optional
+            Lista de símbolos a graficar.
+            Default: SCANNER_SYMBOLS (["BTC", "ETH", "SOL", "BNB", "XRP"])
+        last_n : int, default 100
+            Número de velas a descargar por símbolo.
+
+        Examples
+        --------
+        >>> bot.plot_scan()
+        >>> bot.plot_scan(symbols=["BTC", "ETH", "SOL"], last_n=200)
+        """
+        if symbols is None:
+            symbols = list(SCANNER_SYMBOLS)
+
+        if not symbols:
+            print("⚠️ No hay símbolos para graficar.")
+            return
+
+        # Colores por régimen
+        regime_colors = {
+            "Bull": COLOR_PALETTE["green"],
+            "Bear": COLOR_PALETTE["red"],
+            "Sideways": COLOR_PALETTE["yellow"],
+        }
+        regime_emojis = {"Bull": "🟢", "Bear": "🔴", "Sideways": "🟡"}
+
+        # ── 1. Escanear todos los símbolos ─────────────────
+        scan_results = []
+
+        print("=" * 70)
+        print("📊 SCANNER VISUAL — Generando gráficos")
+        print("=" * 70)
+
+        for symbol, temp_bot in self._scan_symbols(symbols=symbols, last_n=last_n):
+            if temp_bot is not None:
+                regime = temp_bot.regime
+                emoji = regime_emojis.get(regime, "")
+                print(f"  ✅ {symbol:<6} {regime} {emoji}")
+            else:
+                regime = "Error"
+            scan_results.append((symbol, temp_bot, regime))
+
+        print("=" * 70)
+
+        # ── 2. Construir grid de subplots ──────────────────
+        ncols = 2
+        nrows = math.ceil(len(scan_results) / ncols)
+
+        titles = [
+            f"{symbol} — {regime} {regime_emojis.get(regime, '')}"
+            for symbol, _, regime in scan_results
+        ]
+        # Rellenar si el número de símbolos es impar
+        while len(titles) < nrows * ncols:
+            titles.append("")
+
+        fig = make_subplots(
+            rows=nrows,
+            cols=ncols,
+            subplot_titles=titles,
+            vertical_spacing=0.08,
+            horizontal_spacing=0.06,
+        )
+
+        # ── 3. Agregar traces y fondos coloreados ──────────
+        for i, (symbol, temp_bot, regime) in enumerate(scan_results):
+            r = i // ncols + 1
+            c = i % ncols + 1
+
+            if temp_bot is None:
+                fig.add_annotation(
+                    text="Error al cargar datos",
+                    xref=f"x{i + 1}" if i > 0 else "x",
+                    yref=f"y{i + 1}" if i > 0 else "y",
+                    x=0.5,
+                    y=0.5,
+                    showarrow=False,
+                    font=dict(color=COLOR_PALETTE["red"], size=12),
+                )
+                continue
+
+            df = temp_bot.data
+
+            # Línea de precio Close
+            fig.add_trace(
+                go.Scatter(
+                    x=df.index,
+                    y=df["Close"],
+                    mode="lines",
+                    name=symbol,
+                    line=dict(color="white", width=1.5),
+                    showlegend=False,
+                ),
+                row=r,
+                col=c,
+            )
+
+            # Fondo coloreado por régimen
+            fig.add_vrect(
+                x0=df.index[0],
+                x1=df.index[-1],
+                fillcolor=regime_colors.get(regime, COLOR_PALETTE["gray"]),
+                opacity=0.15,
+                line_width=0,
+                row=r,
+                col=c,
+            )
+
+        # ── 4. Layout global ──────────────────────────────
+        fig.update_layout(
+            title="🔍 Scanner Visual — Regímenes de Mercado",
+            template="plotly_dark",
+            plot_bgcolor=COLOR_PALETTE["dark"],
+            paper_bgcolor=COLOR_PALETTE["dark"],
+            height=CHART_HEIGHT_SCAN * nrows,
+            showlegend=False,
         )
 
         fig.show()

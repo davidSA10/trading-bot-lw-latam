@@ -132,3 +132,6 @@ CHART_HEIGHT_SECONDARY = 500
 
 # Proporcion entre panel de precio y panel de volumen [precio, volumen]
 CHART_ROW_HEIGHTS = [0.7, 0.3]
+
+# Altura por fila del grid de scanner visual (plot_scan) en pixeles
+CHART_HEIGHT_SCAN = 300
