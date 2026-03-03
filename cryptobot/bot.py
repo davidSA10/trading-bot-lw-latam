@@ -17,7 +17,13 @@ from typing import Optional
 import pandas as pd
 
 from .backtesting_ import BacktestMixin
-from .constants import VALID_TIMEFRAMES
+from .constants import (
+    DEFAULT_EXCHANGE,
+    DEFAULT_MAX_POSITION_PCT,
+    DEFAULT_STOP_LOSS_PCT,
+    DEFAULT_TAKE_PROFIT_PCT,
+    VALID_TIMEFRAMES,
+)
 from .data import DataMixin
 from .features import FeaturesMixin
 from .models import ModelsMixin
@@ -55,7 +61,7 @@ class CryptoBot(
         Símbolo de la criptomoneda (e.g., "BTC", "ETH", "SOL").
         Se combina internamente con "/USDT" para CCXT.
     timeframe : str
-        Temporalidad de las velas. Opciones: "1h", "4h", "1d" (default).
+        Temporalidad de las velas. Opciones: "15m", "30m", "1h", "4h", "1d" (default).
     exchange : str
         Exchange a usar via CCXT (default: "binanceus").
         Verificados desde Google Colab: "binanceus", "kraken",
@@ -110,15 +116,28 @@ class CryptoBot(
         self,
         symbol: str = "BTC",
         timeframe: str = "1d",
-        exchange: str = "binanceus",
-        max_position_pct: float = 0.10,
-        stop_loss_pct: float = 0.05,
-        take_profit_pct: float = 0.10,
+        exchange: str = DEFAULT_EXCHANGE,
+        max_position_pct: float = DEFAULT_MAX_POSITION_PCT,
+        stop_loss_pct: float = DEFAULT_STOP_LOSS_PCT,
+        take_profit_pct: float = DEFAULT_TAKE_PROFIT_PCT,
     ):
         # ── Validation ──────────────────────────────────
         if timeframe not in VALID_TIMEFRAMES:
             raise ValueError(
                 f"Timeframe '{timeframe}' no válido. Opciones: {VALID_TIMEFRAMES}"
+            )
+
+        if not (0 < max_position_pct <= 1):
+            raise ValueError(
+                f"max_position_pct debe estar entre 0 y 1, recibido: {max_position_pct}"
+            )
+        if not (0 < stop_loss_pct < 1):
+            raise ValueError(
+                f"stop_loss_pct debe estar entre 0 y 1, recibido: {stop_loss_pct}"
+            )
+        if not (0 < take_profit_pct < 1):
+            raise ValueError(
+                f"take_profit_pct debe estar entre 0 y 1, recibido: {take_profit_pct}"
             )
 
         # ── Config ──────────────────────────────────────

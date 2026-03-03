@@ -50,9 +50,34 @@ bot.plot_signals()
 bot.backtest()
 bot.backtest_plot()
 bot.plot_performance()
+
+# 9. Guardar / cargar estado
+bot.save()                          # guarda modelo, régimen, estrategia
+bot.save("mi_bot_v1")
+bot2 = CryptoBot(); bot2.load("mi_bot_v1")
+
+# 10. Scanner multi-símbolo
+bot.scan()                          # escanea BTC, ETH, SOL, BNB, XRP
+bot.scan(symbols=["BTC", "ETH", "AVAX", "DOGE"])
+
+# 11. Paper trading (testnet)
+bot.connect_testnet(api_key="...", api_secret="...")
+bot.execute()                       # ejecuta última señal en testnet
+bot.status()                        # balance, posiciones, P&L
+bot.trade_history()                 # historial como DataFrame
 ```
 
 > **Nota**: `breakout` requiere features con `mode="full"`. `stat_arb` requiere `fetch_data(pair_symbol="ETH")` para cargar datos del par secundario.
+
+## Timeframes disponibles
+
+| Timeframe | Descripción |
+|---|---|
+| `15m` | 15 minutos |
+| `30m` | 30 minutos |
+| `1h` | 1 hora |
+| `4h` | 4 horas |
+| `1d` | 1 día (default) |
 
 ## Flujo Completo
 
@@ -70,13 +95,13 @@ fetch_data() → create_features() → detect_regime() → recommend_strategies(
                                                        plot_signals()
                                                              ↓
                                               ┌──────────────┴──────────────┐
-                                          backtest()              connect_testnet() [TODO]
-                                          backtest_plot()         execute()          [TODO]
-                                          plot_performance()      status()           [TODO]
+                                          backtest()              connect_testnet()
+                                          backtest_plot()         execute()
+                                          plot_performance()      status()
                                                                   trade_history()
                                                                        ↓
-                                                               save() / load()      [TODO]
-                                                               scan()               [TODO]
+                                                               save() / load()
+                                                               scan()
 ```
 
 

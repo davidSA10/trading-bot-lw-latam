@@ -136,7 +136,7 @@ class ModelsMixin:
             self._require_pair_data()
 
             # Alinear índices entre par primario y secundario
-            pair_close = self.pair_data["Close"].reindex(df.index, method="ffill")
+            pair_close = self.pair_data["Close"].reindex(df.index).ffill()
             common_mask = pair_close.notna() & (pair_close > 0) & (df["Close"] > 0)
             pair_close = pair_close[common_mask]
             df = df[common_mask].copy()
@@ -253,7 +253,7 @@ class ModelsMixin:
             ]),
             "svm": Pipeline([
                 ("scaler", StandardScaler()),
-                ("model", SVC()),
+                ("model", SVC(probability=True)),
             ]),
             "random_forest": Pipeline([
                 ("scaler", StandardScaler()),
@@ -416,7 +416,7 @@ class ModelsMixin:
         # ── 2. Crear pipeline fresco para GridSearch ───────
         estimators = {
             "logistic_regression": LogisticRegression(max_iter=1000),
-            "svm": SVC(),
+            "svm": SVC(probability=True),
             "random_forest": RandomForestClassifier(random_state=42),
             "xgboost": XGBClassifier(
                 eval_metric="logloss",

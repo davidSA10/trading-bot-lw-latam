@@ -115,7 +115,7 @@ class DataMixin:
                 end_timestamp = int(datetime.now().timestamp() * 1000)
         else:
             end_timestamp = int(datetime.now().timestamp() * 1000)
-            tf_hours = {"1h": 1, "4h": 4, "1d": 24}
+            tf_hours = {"15m": 0.25, "30m": 0.5, "1h": 1, "4h": 4, "1d": 24}
             hours = last_n * tf_hours[self.timeframe]
             since_timestamp = int(
                 (datetime.now() - timedelta(hours=hours)).timestamp() * 1000

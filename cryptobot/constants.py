@@ -1,6 +1,6 @@
 """Constantes globales del CryptoBot."""
 
-VALID_TIMEFRAMES = ["1h", "4h", "1d"]
+VALID_TIMEFRAMES = ["15m", "30m", "1h", "4h", "1d"]
 
 REGIME_LABELS = {0: "Bear 🔴", 1: "Sideways 🟡", 2: "Bull 🟢"}
 
@@ -48,6 +48,12 @@ STRATEGY_REGISTRY = {
         "rationale": "Funciona mejor en Sideways/Bear donde la volatilidad es alta y mean-reverts. En Bull la vol suele ser baja y estable",
     },
 }
+
+# ── Defaults ─────────────────────────────────────────────
+DEFAULT_EXCHANGE = "binanceus"
+DEFAULT_MAX_POSITION_PCT = 0.10
+DEFAULT_STOP_LOSS_PCT = 0.05
+DEFAULT_TAKE_PROFIT_PCT = 0.10
 
 COLOR_PALETTE = {
     "yellow": "#F0B90B",

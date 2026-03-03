@@ -142,7 +142,7 @@ class RegimeMixin:
         X_scaled = scaler.fit_transform(regime_features)
 
         # 5b. VarianceThreshold — elimina features near-constant
-        var_selector = VarianceThreshold(threshold=1e-10)
+        var_selector = VarianceThreshold(threshold=1e-5)
         X_selected = var_selector.fit_transform(X_scaled)
 
         # 5c. Correlación — de cada par con |r| > 0.95, eliminar uno
