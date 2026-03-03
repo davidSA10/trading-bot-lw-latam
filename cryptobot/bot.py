@@ -197,6 +197,20 @@ class CryptoBot(
         self._exchange = exchange_class({"enableRateLimit": True})
         print(f"✅ Conectado a {self.exchange_id.capitalize()} (API pública)")
 
+    @staticmethod
+    def supported_exchanges() -> list:
+        """Retorna la lista de exchanges soportados por CCXT."""
+        import ccxt
+
+        return ccxt.exchanges
+
+    @staticmethod
+    def is_exchange_supported(exchange_id: str) -> bool:
+        """Verifica si un exchange está soportado por CCXT."""
+        import ccxt
+
+        return exchange_id.lower() in ccxt.exchanges
+
     def _require_data(self):
         """Verifica que fetch_data() fue ejecutado."""
         if self.data is None:
