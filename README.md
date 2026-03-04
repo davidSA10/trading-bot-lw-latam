@@ -75,9 +75,9 @@ fetch_data() → create_features() → detect_regime() → recommend_strategies(
                                           plot_performance()      status()
                                                                   trade_history()
                                                                   disconnect_testnet()
-                                                                       │
-                                                              save() / load()
-                                                              scan() / plot_scan()
+                                              └──────────────┬──────────────┘
+                                                      save() / load()
+                                                      scan() / plot_scan()
 ```
 
 [↑ Indice](#indice)
@@ -217,7 +217,8 @@ El Fear & Greed Index (FGI) es un indicador de sentimiento de mercado que va de 
 bot.fetch_data(last_n=200, fear_greed=True)
 
 # Funciona con cualquier simbolo, pero el FGI siempre refleja sentimiento de BTC
-bot.fetch_data(last_n=200, fear_greed=True)  # ETH bot con sentimiento BTC
+bot_eth = CryptoBot(symbol="ETH")
+bot_eth.fetch_data(last_n=200, fear_greed=True)  # ETH bot con sentimiento BTC
 ```
 
 > **Nota:** El FGI siempre mide el sentimiento sobre BTC, sin importar el simbolo del bot. Para simbolos non-BTC se mostrara un warning informativo.

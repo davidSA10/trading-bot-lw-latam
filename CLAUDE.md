@@ -20,7 +20,7 @@ flake8 .
 
 ## Architecture
 
-**Mixin-based composition** — `CryptoBot` (in `bot.py`) inherits from 9 mixins, each in its own module:
+**Mixin-based composition** — `CryptoBot` (in `bot.py`) inherits from 10 mixins, each in its own module:
 
 ```
 CryptoBot(DataMixin, FeaturesMixin, RegimeMixin, ModelsMixin, SignalsMixin,
