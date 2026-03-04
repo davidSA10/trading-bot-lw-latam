@@ -4,6 +4,27 @@ Trading bot educativo para criptomonedas. Pipeline completo: datos → features 
 
 > **Este bot es educativo. No operes con dinero real sin entender completamente los riesgos.**
 
+## Indice
+
+- [Instalacion](#instalacion)
+- [Quick Start](#quick-start)
+- [Flujo del Pipeline](#flujo-del-pipeline)
+- [Documentacion Detallada](#documentacion-detallada)
+  - [Parametros de CryptoBot](#parametros-de-cryptobot)
+  - [Carga de Datos](#carga-de-datos)
+  - [Feature Engineering](#feature-engineering)
+  - [Deteccion de Regimen de Mercado](#deteccion-de-regimen-de-mercado)
+  - [Estrategias de Trading](#estrategias-de-trading)
+  - [Modelos de Machine Learning](#modelos-de-machine-learning)
+  - [Generacion de Senales](#generacion-de-senales)
+  - [Backtesting](#backtesting)
+  - [Scanner Multi-Simbolo](#scanner-multi-simbolo)
+  - [Guardar y Cargar](#guardar-y-cargar)
+  - [Paper Trading (Testnet)](#paper-trading-testnet)
+  - [Visualizacion](#visualizacion)
+- [Crear tu Propio Bot (Fork)](#crear-tu-propio-bot-fork)
+- [Tecnologias](#tecnologias)
+
 ## Instalacion
 
 ```bash
